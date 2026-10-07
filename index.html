@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+	<title>Can You Fool Vermeer?</title>
+
+	<link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+
+	<main>
+
+		<h1>Can You Fool Vermeer?</h1>
+
+		<p>Recreate the painting as accurately as possible.</p>
+
+		<div class="game">
+
+			<div>
+				<h2>Reference</h2>
+
+				<div class="reference">
+					<img id="referenceImage" src="emmaus.jpg" alt="The Men at Emmaus">
+				</div>
+			</div>
+
+			<div>
+				<h2>Your Painting</h2>
+
+				<canvas id="canvas"></canvas>
+
+<div class="tools">
+
+    <label>
+        Colour
+        <input type="color" id="colorPicker" value="#222222">
+    </label>
+
+    <label>
+        Brush
+        <input type="range" id="brushSize" min="2" max="50" value="8">
+    </label>
+
+</div>
+
+<button id="clear">Clear</button>
+<button id="submit">Submit Painting</button>
+
+			</div>
+
+		</div>
+
+		<div id="result" class="hidden">
+
+			<h2>Your Vermeer Score</h2>
+
+			<div id="score">0%</div>
+
+			<p id="message"></p>
+
+		</div>
+
+	</main>
+
+	<script src="script.js"></script>
+
+</body>
+</html>
