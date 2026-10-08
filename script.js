@@ -23,10 +23,50 @@ brushSize.addEventListener("input", () => {
     ctx.lineWidth = brushSize.value;
 });
 
-resetCanvas();
+function resetCanvas() {
+
+    // Remove previous drawing
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    // Choose canvas appearance based on ageing result
+    let canvasColor = "#d8c7a5";
+
+    if (typeof preparationScore !== "undefined") {
+
+        if (preparationScore === 30) {
+            canvasColor = "#b6a078";
+        }
+        else if (preparationScore === 22) {
+            canvasColor = "#c9b58d";
+        }
+        else if (preparationScore === 12) {
+            canvasColor = "#a88e69";
+        }
+        else {
+            canvasColor = "#e9ddc5";
+        }
+    }
+
+    // Paint the base canvas
+    ctx.fillStyle = canvasColor;
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+    // Add ageing texture after preparation
+    if (typeof preparationScore !== "undefined" &&
+        preparationScore > 0) {
+
+        drawCanvasAgeing(preparationScore);
+    }
+
+    // Restore drawing settings
+    ctx.globalAlpha = 1;
+    ctx.strokeStyle = colorPicker.value;
+    ctx.lineWidth = Number(brushSize.value);
+    ctx.lineCap = "round";
+}
 
 let drawing = false;
-
+let lastPaintPosition = null;
 ctx.lineWidth = 8;
 ctx.lineCap = "round";
 ctx.strokeStyle = "#222";
@@ -46,10 +86,13 @@ function getMousePosition(event) {
         y: (event.clientY - rect.top) * scaleY
     };
 }
+
 function startDrawing(event) {
     drawing = true;
 
     const pos = getMousePosition(event);
+
+    lastPaintPosition = pos;
 
     ctx.beginPath();
     ctx.moveTo(pos.x, pos.y);
@@ -57,21 +100,38 @@ function startDrawing(event) {
 
 function stopDrawing() {
     drawing = false;
+    lastPaintPosition = null;
 }
+
 
 function draw(event) {
     if (!drawing) return;
 
     const pos = getMousePosition(event);
 
+    // Count only real brush movement
+    if (lastPaintPosition !== null) {
+
+        const dx = pos.x - lastPaintPosition.x;
+        const dy = pos.y - lastPaintPosition.y;
+
+        const distance = Math.sqrt(dx * dx + dy * dy);
+
+        paintingDistance += distance;
+    }
+
+    lastPaintPosition = pos;
+
+    // Draw normally
     ctx.lineTo(pos.x, pos.y);
     ctx.stroke();
 }
 
 document.getElementById("clear").addEventListener("click", () => {
-
-   resetCanvas();
-
+    resetCanvas();
+    paintingDistance = 0;
+    lastPaintPosition = null;
+    drawing = false;
 });
 
 // STAGE 3 - EXPERT VERDICT
@@ -82,7 +142,7 @@ document.getElementById("submit").addEventListener("click", () => {
 
     const totalScore = preparationScore + paintingScore;
 
-    const fooledExperts = totalScore >= 70;
+    const fooledExperts = totalScore >= 80;
 
     const verdict = fooledExperts
         ? "YOU FOOLED THE EXPERTS"
@@ -234,7 +294,7 @@ let preparationScore = 0;
 function moveTimingMarker() {
     if (!timingRunning) return;
 
-    markerPosition += 0.7 * markerDirection;
+    markerPosition += 0.95 * markerDirection;
 
     if (markerPosition >= 99) {
         markerPosition = 99;
@@ -260,7 +320,7 @@ stopTimingButton.addEventListener("click", () => {
     timingRunning = false;
 
     // PERFECT AREA
-    if (markerPosition >= 46 && markerPosition <= 54) {
+    if (markerPosition >= 48 && markerPosition <= 52) {
 
         preparationScore = 30;
 
@@ -270,7 +330,7 @@ stopTimingButton.addEventListener("click", () => {
     }
 
     // GOOD AREA
-    else if (markerPosition >= 35 && markerPosition <= 65) {
+    else if (markerPosition >= 40 && markerPosition <= 60) {
 
         preparationScore = 22;
 
@@ -314,6 +374,26 @@ continueButton.addEventListener("click", () => {
 
     // Show the drawing game
     document.getElementById("drawingScreen").style.display = "grid";
+resetCanvas();
+
+const condition = document.getElementById("canvasCondition");
+
+if (preparationScore === 30) {
+    condition.textContent =
+        "MASTERFULLY AGED — Fine cracks and antique tones";
+}
+else if (preparationScore === 22) {
+    condition.textContent =
+        "WELL AGED — Slight discolouration";
+}
+else if (preparationScore === 12) {
+    condition.textContent =
+        "UNEVEN AGEING — Visible staining";
+}
+else {
+    condition.textContent =
+        "POORLY AGED — The canvas looks unusually new";
+}
 
     // Scroll to the drawing game
     document.getElementById("drawingScreen").scrollIntoView({
@@ -324,53 +404,27 @@ continueButton.addEventListener("click", () => {
 
 // PAINTING ATTEMPT SCORE - MAX 70 POINTS
 
+
+// Track how much the player actually paints
+let paintingDistance = 0;
+
+
 function calculatePaintingScore() {
-
-    const imageData = ctx.getImageData(
-        0, 0, canvas.width, canvas.height
-    ).data;
-
-    const background = [216, 199, 165];
-
-    let paintedPixels = 0;
-    let totalPixels = 0;
-
-    for (let i = 0; i < imageData.length; i += 80) {
-
-        const difference =
-            Math.abs(imageData[i] - background[0]) +
-            Math.abs(imageData[i + 1] - background[1]) +
-            Math.abs(imageData[i + 2] - background[2]);
-
-        if (difference > 40) {
-            paintedPixels++;
-        }
-
-        totalPixels++;
-    }
-
-    const coverage = paintedPixels / totalPixels;
-
-    // Blank canvas
-    if (coverage < 0.001) {
+    if (paintingDistance < 100) {
         return 0;
     }
 
-    // Reward participation, but not too generously
-    let score = 10;
+    // Drawing effort earns a maximum of 35 points
+    const effortScore = Math.min(
+        35,
+        Math.round(paintingDistance / 150)
+    );
 
-    score += Math.min(coverage * 180, 40);
-
-    if (coverage > 0.05) {
-        score += 10;
-    }
-
-    if (coverage > 0.15) {
-        score += 10;
-    }
-
-    return Math.min(70, Math.round(score));
+    // The remaining 35 points will come from
+    // composition and canvas coverage later
+    return effortScore;
 }
+
 
 // MUSEUM START SCREEN
 
@@ -387,3 +441,110 @@ startGameButton.addEventListener("click", () => {
     });
 
 });
+
+
+// =====================================
+// HISTORICAL CANVAS AGEING EFFECTS
+// =====================================
+
+function drawCanvasAgeing(score) {
+
+    const w = canvas.width;
+    const h = canvas.height;
+
+    // Fixed random pattern so Clear doesn't
+    // generate completely different ageing
+    let seed = 1937;
+
+    function random() {
+        seed = (seed * 16807) % 2147483647;
+        return (seed - 1) / 2147483646;
+    }
+
+    // Fine canvas grain
+    const grainCount = 3200;
+
+    for (let i = 0; i < grainCount; i++) {
+
+        const x = random() * w;
+        const y = random() * h;
+
+        ctx.fillStyle = "rgba(65, 42, 20, 0.07)";
+        ctx.fillRect(x, y, 2, 2);
+    }
+
+    // Uneven ageing for risky preparation
+    if (score === 12) {
+
+        for (let i = 0; i < 18; i++) {
+
+            const x = random() * w;
+            const y = random() * h;
+            const radius = 25 + random() * 85;
+
+            const stain = ctx.createRadialGradient(
+                x, y, 0,
+                x, y, radius
+            );
+
+            stain.addColorStop(
+                0, "rgba(70, 38, 15, 0.22)"
+            );
+
+            stain.addColorStop(
+                1, "rgba(70, 38, 15, 0)"
+            );
+
+            ctx.fillStyle = stain;
+
+            ctx.fillRect(
+                x - radius,
+                y - radius,
+                radius * 2,
+                radius * 2
+            );
+        }
+    }
+
+    // Fine simulated surface cracks
+    // Best preparation has subtle, controlled ageing
+    if (score === 30 || score === 22) {
+
+        const crackCount = score === 30 ? 32 : 12;
+
+        ctx.lineWidth = 0.8;
+        ctx.strokeStyle = "rgba(65, 43, 23, 0.22)";
+
+        for (let i = 0; i < crackCount; i++) {
+
+            let x = random() * w;
+            let y = random() * h;
+
+            ctx.beginPath();
+            ctx.moveTo(x, y);
+
+            for (let j = 0; j < 5; j++) {
+                x += (random() - 0.5) * 24;
+                y += (random() - 0.5) * 24;
+                ctx.lineTo(x, y);
+            }
+
+            ctx.stroke();
+        }
+    }
+
+    // Darkened edges for antique appearance
+    if (score === 30 || score === 22 || score === 12) {
+
+        const edge = ctx.createRadialGradient(
+            w / 2, h / 2, h * 0.2,
+            w / 2, h / 2, w * 0.75
+        );
+
+        edge.addColorStop(0, "rgba(0,0,0,0)");
+        edge.addColorStop(1, "rgba(55,30,12,0.18)");
+
+        ctx.fillStyle = edge;
+        ctx.fillRect(0, 0, w, h);
+    }
+}
