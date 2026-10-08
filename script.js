@@ -74,18 +74,63 @@ document.getElementById("clear").addEventListener("click", () => {
 
 });
 
+// STAGE 3 - EXPERT VERDICT
+
 document.getElementById("submit").addEventListener("click", () => {
 
-    const score = calculateSimilarity();
+    const paintingScore = calculatePaintingScore();
 
-    document.getElementById("score").textContent =
-        score + "%";
+    const totalScore = preparationScore + paintingScore;
 
-    document.getElementById("message").textContent =
-        getMessage(score);
+    const fooledExperts = totalScore >= 70;
 
-    document.getElementById("result")
-        .classList.remove("hidden");
+    const verdict = fooledExperts
+        ? "YOU FOOLED THE EXPERTS"
+        : "FORGERY DETECTED";
+
+    const explanation = fooledExperts
+        ? "Your forgery has convinced the experts!"
+        : "The experts noticed something suspicious.";
+
+    const result = document.getElementById("result");
+
+    result.innerHTML = `
+        <div class="verdict-label">THE EXPERT'S VERDICT · 1937</div>
+
+        <h2 class="verdict-title">${verdict}</h2>
+
+        <div class="score-breakdown">
+            <p>Canvas Preparation: ${preparationScore} / 30</p>
+            <p>Painting Attempt: ${paintingScore} / 70</p>
+        </div>
+
+        <h2 class="final-score">${totalScore}%</h2>
+
+        <p>${explanation}</p>
+
+        <div class="history-reveal">
+            <h3>THE REAL STORY</h3>
+            <p>
+                In 1937, Han van Meegeren created
+                The Supper at Emmaus, a forgery
+                that experts accepted as a genuine Vermeer.
+            </p>
+            <p>
+                His deception was exposed in 1945.
+                Could you have spotted the fake?
+            </p>
+        </div>
+
+        <button onclick="location.reload()">
+            TRY AGAIN
+        </button>
+    `;
+
+    result.classList.remove("hidden");
+
+    result.scrollIntoView({
+        behavior: "smooth"
+    });
 
 });
 
@@ -170,3 +215,175 @@ function calculateSimilarity() {
 
     return Math.round(score);
 }
+
+// ================================
+// PREPARE THE FORGERY - TIMING GAME
+// ================================
+
+const timingMarker = document.getElementById("timingMarker");
+const stopTimingButton = document.getElementById("stopTiming");
+const timingResult = document.getElementById("timingResult");
+const continueButton = document.getElementById("continueToPainting");
+
+let markerPosition = 0;
+let markerDirection = 1;
+let timingRunning = true;
+
+let preparationScore = 0;
+
+function moveTimingMarker() {
+    if (!timingRunning) return;
+
+    markerPosition += 0.7 * markerDirection;
+
+    if (markerPosition >= 99) {
+        markerPosition = 99;
+        markerDirection = -1;
+    }
+
+    if (markerPosition <= 0) {
+        markerPosition = 0;
+        markerDirection = 1;
+    }
+
+    timingMarker.style.left = markerPosition + "%";
+
+    requestAnimationFrame(moveTimingMarker);
+}
+
+moveTimingMarker();
+
+stopTimingButton.addEventListener("click", () => {
+
+    if (!timingRunning) return;
+
+    timingRunning = false;
+
+    // PERFECT AREA
+    if (markerPosition >= 46 && markerPosition <= 54) {
+
+        preparationScore = 30;
+
+        timingResult.innerHTML =
+            "<strong>PERFECT</strong><br>The canvas looks convincingly aged.";
+
+    }
+
+    // GOOD AREA
+    else if (markerPosition >= 35 && markerPosition <= 65) {
+
+        preparationScore = 22;
+
+        timingResult.innerHTML =
+            "<strong>GOOD</strong><br>The experts might believe it.";
+
+    }
+
+    // CLOSE
+    else if (markerPosition >= 25 && markerPosition <= 75) {
+
+        preparationScore = 12;
+
+        timingResult.innerHTML =
+            "<strong>RISKY</strong><br>Something about the canvas looks suspicious.";
+
+    }
+
+    // BAD
+    else {
+
+        preparationScore = 5;
+
+        timingResult.innerHTML =
+            "<strong>POOR</strong><br>The ageing process doesn't look convincing.";
+
+    }
+
+    stopTimingButton.disabled = true;
+
+    continueButton.classList.remove("hidden");
+
+});
+
+// SWITCH FROM PREPARATION TO DRAWING
+
+continueButton.addEventListener("click", () => {
+
+    // Hide the preparation game
+    document.getElementById("prepareScreen").style.display = "none";
+
+    // Show the drawing game
+    document.getElementById("drawingScreen").style.display = "grid";
+
+    // Scroll to the drawing game
+    document.getElementById("drawingScreen").scrollIntoView({
+        behavior: "smooth"
+    });
+
+});
+
+// PAINTING ATTEMPT SCORE - MAX 70 POINTS
+
+function calculatePaintingScore() {
+
+    const imageData = ctx.getImageData(
+        0, 0, canvas.width, canvas.height
+    ).data;
+
+    const background = [216, 199, 165];
+
+    let paintedPixels = 0;
+    let totalPixels = 0;
+
+    for (let i = 0; i < imageData.length; i += 80) {
+
+        const difference =
+            Math.abs(imageData[i] - background[0]) +
+            Math.abs(imageData[i + 1] - background[1]) +
+            Math.abs(imageData[i + 2] - background[2]);
+
+        if (difference > 40) {
+            paintedPixels++;
+        }
+
+        totalPixels++;
+    }
+
+    const coverage = paintedPixels / totalPixels;
+
+    // Blank canvas
+    if (coverage < 0.001) {
+        return 0;
+    }
+
+    // Reward participation, but not too generously
+    let score = 10;
+
+    score += Math.min(coverage * 180, 40);
+
+    if (coverage > 0.05) {
+        score += 10;
+    }
+
+    if (coverage > 0.15) {
+        score += 10;
+    }
+
+    return Math.min(70, Math.round(score));
+}
+
+// MUSEUM START SCREEN
+
+const startGameButton = document.getElementById("startGame");
+
+startGameButton.addEventListener("click", () => {
+
+    document.getElementById("startScreen").style.display = "none";
+
+    document.getElementById("prepareScreen").style.display = "block";
+
+    document.getElementById("prepareScreen").scrollIntoView({
+        behavior: "smooth"
+    });
+
+});

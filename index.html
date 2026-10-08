@@ -13,11 +13,80 @@
 
 	<main>
 
+        <!-- MUSEUM TITLE SCREEN -->
+<section id="startScreen">
+
+    <div class="intro-label">
+        AN INTERACTIVE EXHIBITION · 1937
+    </div>
+
+    <h1 class="intro-title">
+        THE ART OF<br>DECEPTION
+    </h1>
+
+    <p class="intro-subtitle">
+        The story of Han van Meegeren
+    </p>
+
+    <div class="intro-artwork">
+        <img src="emmaus.jpg" alt="The Supper at Emmaus">
+    </div>
+
+    <p class="intro-question">
+        In 1937, a painting fooled the world's leading art experts.
+        Could you do the same?
+    </p>
+
+    <button id="startGame">
+        BEGIN THE CHALLENGE →
+    </button>
+
+    <p class="intro-footer">
+        A SHORT INTERACTIVE MUSEUM EXPERIENCE
+    </p>
+
+</section>
+
+       <!-- PREPARE THE FORGERY -->
+<section id="prepareScreen" class="game-screen">
+    <div class="stage-label">STAGE I</div>
+
+    <h1>Prepare the Forgery</h1>
+
+    <p class="stage-description">
+        A convincing forgery needs to look centuries old.
+        Time the ageing process carefully.
+    </p>
+
+    <div class="museum-card">
+        <h2>AGE THE CANVAS</h2>
+
+        <p>
+            Stop the marker inside the target area.
+            The closer to the centre, the better your forgery.
+        </p>
+
+        <div class="timing-bar" id="timingBar">
+            <div class="target-zone"></div>
+            <div class="perfect-zone"></div>
+            <div class="timing-marker" id="timingMarker"></div>
+        </div>
+
+        <button id="stopTiming">STOP</button>
+
+        <div id="timingResult" class="timing-result"></div>
+    </div>
+
+    <button id="continueToPainting" class="continue-button hidden">
+        CONTINUE TO FORGERY →
+    </button>
+</section>
+
 		<h1>Can You Fool Vermeer?</h1>
 
 		<p>Recreate the painting as accurately as possible.</p>
 
-		<div class="game">
+		<div class="game" id="drawingScreen">
 
 			<div>
 				<h2>Reference</h2>
