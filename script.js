@@ -71,9 +71,13 @@ ctx.lineWidth = 8;
 ctx.lineCap = "round";
 ctx.strokeStyle = "#222";
 
-canvas.addEventListener("mousedown", startDrawing);
-canvas.addEventListener("mouseup", stopDrawing);
-canvas.addEventListener("mousemove", draw);
+
+canvas.addEventListener("pointerdown", startDrawing);
+canvas.addEventListener("pointermove", draw);
+canvas.addEventListener("pointerup", stopDrawing);
+canvas.addEventListener("pointercancel", stopDrawing);
+canvas.addEventListener("pointerleave", stopDrawing);
+
 
 function getMousePosition(event) {
     const rect = canvas.getBoundingClientRect();
@@ -90,39 +94,43 @@ function getMousePosition(event) {
 function startDrawing(event) {
     drawing = true;
 
-    const pos = getMousePosition(event);
+    canvas.setPointerCapture(event.pointerId);
 
+    const pos = getMousePosition(event);
     lastPaintPosition = pos;
 
     ctx.beginPath();
     ctx.moveTo(pos.x, pos.y);
 }
 
-function stopDrawing() {
+function stopDrawing(event) {
     drawing = false;
     lastPaintPosition = null;
-}
 
+    if (
+        event &&
+        canvas.hasPointerCapture(event.pointerId)
+    ) {
+        canvas.releasePointerCapture(event.pointerId);
+    }
+}
 
 function draw(event) {
     if (!drawing) return;
 
     const pos = getMousePosition(event);
 
-    // Count only real brush movement
     if (lastPaintPosition !== null) {
-
         const dx = pos.x - lastPaintPosition.x;
         const dy = pos.y - lastPaintPosition.y;
 
-        const distance = Math.sqrt(dx * dx + dy * dy);
-
-        paintingDistance += distance;
+        paintingDistance += Math.sqrt(
+            dx * dx + dy * dy
+        );
     }
 
     lastPaintPosition = pos;
 
-    // Draw normally
     ctx.lineTo(pos.x, pos.y);
     ctx.stroke();
 }
@@ -547,4 +555,13 @@ function drawCanvasAgeing(score) {
         ctx.fillStyle = edge;
         ctx.fillRect(0, 0, w, h);
     }
+}
+
+
+/* Touchscreen drawing support */
+#canvas {
+    touch-action: none;
+    cursor: crosshair;
+    max-width: 100%;
+    display: block;
 }
