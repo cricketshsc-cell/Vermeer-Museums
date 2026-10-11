@@ -117,13 +117,65 @@
     </label>
 
 </div>
-
+<button id="charcoalTool" type="button">✏️ Charcoal</button>
+<button id="eraserTool" type="button">◻ Eraser</button>
+<button id="undo" type="button">↶ Undo</button>
 <button id="clear">Clear</button>
 <button id="submit">Submit Painting</button>
 
 			</div>
 
 		</div>
+
+
+<!-- COURTROOM SCENE -->
+<section id="courtroomScreen" class="courtroom-screen" hidden>
+
+    <p class="courtroom-eyebrow">THE FORGER'S TRIAL · 1945</p>
+    <h2>THE COURT IS NOW IN SESSION</h2>
+    <p class="courtroom-subtitle">
+        Three experts will decide the fate of your forgery.
+    </p>
+
+    <div class="courtroom-artwork">
+        <h3>THE EVIDENCE</h3>
+        <img id="courtroomPainting" alt="Your submitted forgery">
+    </div>
+
+    <div class="judge-bench">
+
+        <div class="judge">
+            <div class="judge-icon">⚖️</div>
+            <h3>THE HISTORIAN</h3>
+            <div class="judge-plaque" id="judgeScore1">?</div>
+            <p id="judgeComment1">Awaiting verdict...</p>
+        </div>
+
+        <div class="judge">
+            <div class="judge-icon">🎨</div>
+            <h3>THE ART CRITIC</h3>
+            <div class="judge-plaque" id="judgeScore2">?</div>
+            <p id="judgeComment2">Awaiting verdict...</p>
+        </div>
+
+        <div class="judge">
+            <div class="judge-icon">💎</div>
+            <h3>THE COLLECTOR</h3>
+            <div class="judge-plaque" id="judgeScore3">?</div>
+            <p id="judgeComment3">Awaiting verdict...</p>
+        </div>
+
+    </div>
+
+    <div id="courtroomVerdict" class="courtroom-verdict" hidden>
+        <h3>THE FINAL VERDICT</h3>
+        <p id="courtroomFinalScore"></p>
+        <p id="courtroomFinalMessage"></p>
+        <div id="verdictStamp" class="verdict-stamp"></div>
+        <button id="courtroomRestart">TRY AGAIN</button>
+    </div>
+
+</section>
 
 		<div id="result" class="hidden">
 
@@ -139,5 +191,12 @@
 
 	<script src="script.js"></script>
 
+<!-- PAGE RIP TRANSITION -->
+<div id="pageRip" class="page-rip-overlay" aria-hidden="true">
+    <div class="rip-half rip-top"></div>
+    <div class="rip-half rip-bottom"></div>
+</div>
 </body>
 </html>
+
+

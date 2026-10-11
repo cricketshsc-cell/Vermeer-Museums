@@ -4,14 +4,6 @@ const ctx = canvas.getContext("2d");
 canvas.width = 800;
 canvas.height = 600;
 
-function resetCanvas() {
-    ctx.fillStyle = "#d8c7a5";
-ctx.strokeStyle = "#222222";
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-    ctx.strokeStyle = "#222222";
-}
-
 const colorPicker = document.getElementById("colorPicker");
 const brushSize = document.getElementById("brushSize");
 
@@ -22,7 +14,7 @@ colorPicker.addEventListener("input", () => {
 brushSize.addEventListener("input", () => {
     ctx.lineWidth = brushSize.value;
 });
-
+let parchmentBackground = null;
 function resetCanvas() {
 
     // Remove previous drawing
@@ -63,9 +55,14 @@ function resetCanvas() {
     ctx.strokeStyle = colorPicker.value;
     ctx.lineWidth = Number(brushSize.value);
     ctx.lineCap = "round";
+    parchmentBackground = ctx.getImageData(
+    0, 0, canvas.width, canvas.height
+);
 }
 
 let drawing = false;
+let currentTool = "charcoal";
+let undoHistory = [];
 let lastPaintPosition = null;
 ctx.lineWidth = 8;
 ctx.lineCap = "round";
@@ -92,13 +89,19 @@ function getMousePosition(event) {
 }
 
 function startDrawing(event) {
+    undoHistory.push(ctx.getImageData(0, 0, canvas.width, canvas.height));
     drawing = true;
 
+    if (canvas.setPointerCapture) {
     canvas.setPointerCapture(event.pointerId);
+}
 
     const pos = getMousePosition(event);
     lastPaintPosition = pos;
 
+    ctx.globalCompositeOperation = "source-over";
+ctx.lineWidth = currentTool === "eraser" ? 25 : 8;
+ctx.strokeStyle = currentTool === "eraser" ? "#e8d9b5" : "#222";
     ctx.beginPath();
     ctx.moveTo(pos.x, pos.y);
 }
@@ -131,12 +134,51 @@ function draw(event) {
 
     lastPaintPosition = pos;
 
+    if (currentTool === "eraser" && parchmentBackground) {
+    // Erase a circular area and restore the original parchment
+    const radius = 13;
+
+    const x = Math.max(0, Math.floor(pos.x - radius));
+    const y = Math.max(0, Math.floor(pos.y - radius));
+    const width = Math.min(canvas.width - x, radius * 2);
+    const height = Math.min(canvas.height - y, radius * 2);
+
+    ctx.putImageData(
+        parchmentBackground,
+        0, 0,
+        x, y, width, height
+    );
+} else {
     ctx.lineTo(pos.x, pos.y);
     ctx.stroke();
 }
+}
+const charcoalButton = document.getElementById("charcoalTool");
+const eraserButton = document.getElementById("eraserTool");
+
+charcoalButton.classList.add("active-tool");
+
+charcoalButton.addEventListener("click", () => {
+    currentTool = "charcoal";
+    charcoalButton.classList.add("active-tool");
+    eraserButton.classList.remove("active-tool");
+});
+
+eraserButton.addEventListener("click", () => {
+    currentTool = "eraser";
+    eraserButton.classList.add("active-tool");
+    charcoalButton.classList.remove("active-tool");
+});
+document.getElementById("undo").addEventListener("click", () => {
+    if (undoHistory.length === 0) return;
+
+    const previousCanvas = undoHistory.pop();
+    ctx.putImageData(previousCanvas, 0, 0);
+});
 
 document.getElementById("clear").addEventListener("click", () => {
     resetCanvas();
+    undoHistory = [];
     paintingDistance = 0;
     lastPaintPosition = null;
     drawing = false;
@@ -145,7 +187,8 @@ document.getElementById("clear").addEventListener("click", () => {
 // STAGE 3 - EXPERT VERDICT
 
 document.getElementById("submit").addEventListener("click", () => {
-
+enterCourtroom();
+return;
     const paintingScore = calculatePaintingScore();
 
     const totalScore = preparationScore + paintingScore;
@@ -557,3 +600,109 @@ function drawCanvasAgeing(score) {
     }
 }
 
+
+/* ===== COURTROOM SYSTEM ===== */
+
+function enterCourtroom() {
+    const courtroom = document.getElementById("courtroomScreen");
+    const drawingScreen = document.getElementById("drawingScreen");
+    const oldResult = document.getElementById("result");
+
+    // Display the player's actual drawing
+    document.getElementById("courtroomPainting").src =
+        canvas.toDataURL("image/png");
+
+    // Hide previous screens
+    drawingScreen.style.display = "none";
+    oldResult.classList.add("hidden");
+    oldResult.style.display = "none";
+
+    // Reset courtroom
+    courtroom.hidden = false;
+    document.getElementById("courtroomVerdict").hidden = true;
+
+    for (let i = 1; i <= 3; i++) {
+        document.getElementById("judgeScore" + i).textContent = "?";
+        document.getElementById("judgeComment" + i).textContent =
+            "Awaiting verdict...";
+    }
+
+    courtroom.scrollIntoView({ behavior: "smooth" });
+
+    // Temporary test scores
+    const scores = paintingDistance < 100
+    ? [1, 1, 1]
+    : [
+        Math.floor(Math.random() * 6) + 5,
+        Math.floor(Math.random() * 6) + 5,
+        Math.floor(Math.random() * 6) + 5
+    ];
+
+    
+const comments = [
+    scores[0] <= 3
+        ? "I've seen more convincing cave paintings."
+        : scores[0] <= 6
+        ? "The historical accuracy is... questionable."
+        : "Remarkable. A convincing imitation of the period.",
+
+    scores[1] <= 3
+        ? "Is this art, or an accident?"
+        : scores[1] <= 6
+        ? "A bold interpretation. Perhaps too bold."
+        : "The composition shows genuine artistic promise.",
+
+    scores[2] <= 3
+        ? "I wouldn't pay a single guilder for this."
+        : scores[2] <= 6
+        ? "Interesting... but I'm keeping my wallet closed."
+        : "Magnificent! I'll take two!"
+];
+
+
+    // Reveal judges one at a time
+    scores.forEach((score, index) => {
+        setTimeout(() => {
+            document.getElementById(
+                "judgeScore" + (index + 1)
+            ).textContent = score + "/10";
+
+            document.getElementById(
+                "judgeComment" + (index + 1)
+            ).textContent = comments[index];
+        }, (index + 1) * 1200);
+    });
+
+    // Final verdict
+    setTimeout(() => {
+        const average =
+            scores.reduce((sum, score) => sum + score, 0) / 3;
+
+        document.getElementById("courtroomFinalScore").textContent =
+            average.toFixed(1) + "/10";
+
+        document.getElementById("courtroomFinalMessage").textContent =
+            average >= 7
+                ? "The experts are impressed. Your forgery has fooled the court!"
+                : "The experts remain suspicious. Your forgery has been exposed!";
+
+        document.getElementById("courtroomVerdict").hidden = false;
+        const stamp = document.getElementById("verdictStamp");
+
+stamp.className = "verdict-stamp";
+
+if (average >= 7) {
+    stamp.textContent = "EXPERTS FOOLED";
+    stamp.classList.add("success");
+} else {
+    stamp.textContent = "FORGERY DETECTED";
+    stamp.classList.add("failure");
+}
+
+stamp.classList.add("stamp-active");
+    }, 4300);
+}
+
+document.getElementById("courtroomRestart").addEventListener("click", () => {
+    window.location.reload();
+});
