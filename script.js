@@ -557,11 +557,3 @@ function drawCanvasAgeing(score) {
     }
 }
 
-
-/* Touchscreen drawing support */
-#canvas {
-    touch-action: none;
-    cursor: crosshair;
-    max-width: 100%;
-    display: block;
-}

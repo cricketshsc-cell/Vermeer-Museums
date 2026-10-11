@@ -574,3 +574,11 @@ canvas {
     font-size: 13px;
     margin-top: 30px;
 }
+
+/* Touchscreen drawing support */
+#canvas {
+    touch-action: none;
+    cursor: crosshair;
+    max-width: 100%;
+    display: block;
+}
